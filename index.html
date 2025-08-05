@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jornada de Qualificação Imersiva</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="interaction-container" class="interaction-container">
+        
+        <button id="back-btn" class="control-button top-left" style="display: none;" aria-label="Voltar">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+
+        <button id="audio-btn" class="control-button top-right" style="display: none;" aria-label="Ativar/Desativar som">
+            <i class="fas fa-volume-high"></i>
+        </button>
+
+        <div class="media-container">
+            <img id="image-bg-1" class="background-image" src="" alt="Contexto visual da etapa">
+            <img id="image-bg-2" class="background-image" src="" alt="Contexto visual da etapa">
+            <video id="final-video" src="" muted playsinline loop style="display: none;" aria-label="Vídeo final"></video>
+            <div class="media-overlay"></div>
+            <button id="unmute-video-btn" style="display: none;">Ativar Som</button>
+        </div>
+
+        <div id="message-container" class="message-container"></div>
+        
+        <div id="input-area" class="input-area" style="display: none;">
+            <input type="text" id="user-input" autocomplete="off" aria-label="Sua resposta">
+        </div>
+
+        <div id="options-container" class="options-container"></div>
+
+        <div id="final-screen-container" class="final-screen-container" style="display: none;"></div>
+    </div>
+
+    <div id="fullscreen-video-container" class="fullscreen-video-container"></div>
+
+    <audio id="background-music" loop></audio> 
+    
+    <script src="script.js"></script> 
+
+</body>
+</html>
