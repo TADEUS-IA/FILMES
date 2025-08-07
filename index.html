@@ -136,10 +136,11 @@
         .input-area {
             position: absolute; bottom: 0; left: 0;
             width: 100%; padding: 25px; z-index: 30;
+            display: flex; align-items: center; gap: 10px;
         }
         
         #user-input {
-            width: 100%;
+            flex: 1;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: var(--branco-texto);
@@ -162,6 +163,22 @@
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
+        }
+
+        #advance-btn {
+            background: var(--verde-neon);
+            color: var(--roxo-fundo);
+            border: none;
+            padding: 18px 20px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        #advance-btn:hover {
+            opacity: 0.8;
+            transform: scale(1.03);
         }
         
         .options-container {
@@ -215,7 +232,39 @@
         .loading-video {
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: cover; /* Ajustado para preencher a tela */
+            display: none;
+        }
+        
+        .loading-video.active {
+            display: block;
+        }
+        
+        #unmute-video-btn {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 110;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--branco-texto);
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-family: var(--font-family);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeInButton 1s 1s ease forwards;
+            display: none;
+        }
+
+        #unmute-video-btn:hover {
+            background: var(--verde-neon);
+            color: var(--roxo-fundo);
         }
     </style>
 </head>
@@ -241,6 +290,7 @@
         
         <div id="input-area" class="input-area" style="display: none;">
             <input type="text" id="user-input" autocomplete="off" aria-label="Sua resposta">
+            <button id="advance-btn" style="display: none;"><i class="fas fa-arrow-right"></i></button>
         </div>
 
         <div id="options-container" class="options-container"></div>
@@ -285,6 +335,7 @@
                 backgroundMusic: document.getElementById('background-music'),
                 backBtn: document.getElementById('back-btn'),
                 audioBtn: document.getElementById('audio-btn'),
+                advanceBtn: document.getElementById('advance-btn'),
             };
         
             let appState = 'JOURNEY';
@@ -300,33 +351,28 @@
                 return new Promise(async (resolve) => {
                     const currentSrc = activeImage.src.split('/').pop();
                     const newSrcFileName = newSrc.split('/').pop();
-
+        
                     if (!newSrc || currentSrc === newSrcFileName) {
                         return resolve();
                     }
-
+        
                     inactiveImage.src = newSrc;
                     
-                    // Espera a imagem inativa carregar
                     await new Promise(imgResolve => {
                         inactiveImage.onload = imgResolve;
                         inactiveImage.onerror = () => {
                             console.error(`ERRO: Não foi possível carregar a imagem "${newSrc}".`);
-                            imgResolve(); // Resolve mesmo com erro para não travar
+                            imgResolve();
                         };
                     });
-
-                    // Remove a classe "active" da imagem atual
+        
                     activeImage.classList.remove('active');
-
-                    // Espera a transição de saída
+        
                     setTimeout(() => {
-                        // Ativa a nova imagem
                         inactiveImage.classList.add('active');
-                        // Troca as referências de imagem
                         [activeImage, inactiveImage] = [inactiveImage, activeImage];
                         resolve();
-                    }, 800); // 800ms é a duração da transição de opacidade no CSS
+                    }, 800);
                 });
             };
             
@@ -347,12 +393,14 @@
                 ui.messageContainer.innerHTML = '';
                 ui.optionsContainer.innerHTML = '';
                 ui.inputArea.style.display = 'none';
-        
+                ui.advanceBtn.style.display = 'none';
+
                 if (currentStep.type === 'text-input') {
-                    ui.inputArea.style.display = 'block';
+                    ui.inputArea.style.display = 'flex';
                     ui.userInput.value = userAnswers[currentStep.name] || '';
                     ui.userInput.classList.remove('error');
                     ui.userInput.focus();
+                    ui.advanceBtn.style.display = 'flex';
                     const msgEl = document.createElement('div');
                     msgEl.className = 'bot-message';
                     msgEl.textContent = currentStep.question;
@@ -453,19 +501,37 @@
                 } catch (error) {
                     console.error('Falha ao enviar dados:', error);
                 }
+
+                // Cria o container da tela de carregamento final
                 const loadingScreen = document.createElement('div');
                 loadingScreen.className = 'loading-screen-container';
-                loadingScreen.innerHTML = `<video src="loading-video.mp4" id="final-loading-video" class="loading-video" loop playsinline></video>`;
+                loadingScreen.innerHTML = `<video src="loading-video.mp4" id="final-loading-video" class="loading-video" loop playsinline></video>
+                                           <button id="unmute-video-btn" style="display: none;">Ativar Som</button>`;
                 ui.interactionContainer.appendChild(loadingScreen);
+                
                 const finalVideo = document.getElementById('final-loading-video');
+                const unmuteBtn = document.getElementById('unmute-video-btn');
+
+                // Tenta tocar o vídeo com som
                 const playPromise = finalVideo.play();
                 if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.warn("Autoplay com som bloqueado pelo navegador. Tocando sem som.", error);
+                    playPromise.then(() => {
+                        finalVideo.classList.add('active');
+                    }).catch(error => {
+                        console.warn("Autoplay com som bloqueado. Tocando sem som e exibindo botão para ativar.", error);
                         finalVideo.muted = true;
                         finalVideo.play();
+                        finalVideo.classList.add('active');
+                        unmuteBtn.style.display = 'block';
                     });
                 }
+                
+                // Lógica para o botão de ativar som
+                unmuteBtn.addEventListener('click', () => {
+                    finalVideo.muted = false;
+                    unmuteBtn.style.display = 'none';
+                });
+
                 const totalDuration = 30;
                 setTimeout(() => {
                     window.location.href = finalRedirectURL;
@@ -507,6 +573,7 @@
                 if (e.key === 'Enter') handleTextInput();
             });
             ui.backBtn.addEventListener('click', goBack);
+            ui.advanceBtn.addEventListener('click', handleTextInput);
             ui.audioBtn.addEventListener('click', () => {
                 const music = ui.backgroundMusic;
                 if (music.paused) {
